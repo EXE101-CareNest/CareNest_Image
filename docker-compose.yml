@@ -1,0 +1,19 @@
+services:
+  imagesapi:
+    image: images-api-dev:latest
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8025:8080"
+    container_name: images-api-dev
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    networks:
+      carenest-network:
+        ipv4_address: 192.168.0.28
+
+networks:
+  carenest-network:
+    external: true
