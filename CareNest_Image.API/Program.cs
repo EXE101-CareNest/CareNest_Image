@@ -38,7 +38,14 @@ builder.Services.AddSingleton<CareNest_Image.API.Repositories.IImageRepository, 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+// Log toàn bộ file và env giúp phát hiện thiếu config khi cloud run
+foreach(var file in Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory))
+    Console.WriteLine($"File on container: {file}");
+Console.WriteLine($"ASPNETCORE_ENVIRONMENT: {Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}");
+
+// Điều chỉnh bật Swagger theo env/config như checklist
+var swaggerEnabled = app.Environment.IsDevelopment() || builder.Configuration.GetValue<bool>("Swagger:Enabled");
+if (swaggerEnabled)
 {
     app.UseSwagger();
     app.UseSwaggerUI();

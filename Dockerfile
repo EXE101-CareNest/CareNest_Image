@@ -27,4 +27,5 @@ RUN dotnet publish "./CareNest_Image.API.csproj" -c $BUILD_CONFIGURATION -o /app
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+COPY CareNest_Image.API/*.json /app/ # Đảm bảo đích là thư mục
 ENTRYPOINT ["dotnet", "CareNest_Image.API.dll"]
