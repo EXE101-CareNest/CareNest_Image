@@ -18,12 +18,39 @@ builder.Services.AddCors(options =>
 });
 
 // Cloudinary configuration via options and DI
+// Ưu tiên đọc từ ENV, fallback sang appsettings (theo chuẩn deploy cloud)
+// Đọc ENV trước, sau đó merge vào config để Options pattern hoạt động đúng
+builder.Configuration["Cloudinary:CloudName"] = builder.Configuration["CLOUDINARY_CLOUD_NAME"] ?? builder.Configuration["Cloudinary:CloudName"] ?? string.Empty;
+builder.Configuration["Cloudinary:ApiKey"] = builder.Configuration["CLOUDINARY_API_KEY"] ?? builder.Configuration["Cloudinary:ApiKey"] ?? string.Empty;
+builder.Configuration["Cloudinary:ApiSecret"] = builder.Configuration["CLOUDINARY_API_SECRET"] ?? builder.Configuration["Cloudinary:ApiSecret"] ?? string.Empty;
+if (!string.IsNullOrWhiteSpace(builder.Configuration["CLOUDINARY_UPLOAD_PRESET"]))
+    builder.Configuration["Cloudinary:UploadPreset"] = builder.Configuration["CLOUDINARY_UPLOAD_PRESET"];
+if (!string.IsNullOrWhiteSpace(builder.Configuration["CLOUDINARY_DEFAULT_FOLDER"]))
+    builder.Configuration["Cloudinary:DefaultFolder"] = builder.Configuration["CLOUDINARY_DEFAULT_FOLDER"];
+
+// Register Options pattern
 builder.Services.Configure<CareNest_Image.API.Settings.CloudinaryOptions>(
     builder.Configuration.GetSection("Cloudinary"));
-// Prefer environment variables if present
-builder.Configuration["Cloudinary:CloudName"] = builder.Configuration["CLOUDINARY_CLOUD_NAME"] ?? builder.Configuration["Cloudinary:CloudName"];
-builder.Configuration["Cloudinary:ApiKey"] = builder.Configuration["CLOUDINARY_API_KEY"] ?? builder.Configuration["Cloudinary:ApiKey"];
-builder.Configuration["Cloudinary:ApiSecret"] = builder.Configuration["CLOUDINARY_API_SECRET"] ?? builder.Configuration["Cloudinary:ApiSecret"];
+
+// Validate required config
+var cloudinaryCloudName = builder.Configuration["Cloudinary:CloudName"];
+var cloudinaryApiKey = builder.Configuration["Cloudinary:ApiKey"];
+var cloudinaryApiSecret = builder.Configuration["Cloudinary:ApiSecret"];
+
+if (string.IsNullOrWhiteSpace(cloudinaryCloudName))
+{
+    throw new InvalidOperationException("Cloudinary CloudName must be specified. Set CLOUDINARY_CLOUD_NAME environment variable or Cloudinary:CloudName in appsettings.");
+}
+if (string.IsNullOrWhiteSpace(cloudinaryApiKey))
+{
+    throw new InvalidOperationException("Cloudinary ApiKey must be specified. Set CLOUDINARY_API_KEY environment variable or Cloudinary:ApiKey in appsettings.");
+}
+if (string.IsNullOrWhiteSpace(cloudinaryApiSecret))
+{
+    throw new InvalidOperationException("Cloudinary ApiSecret must be specified. Set CLOUDINARY_API_SECRET environment variable or Cloudinary:ApiSecret in appsettings.");
+}
+
+// Register Cloudinary instance
 builder.Services.AddSingleton(provider =>
 {
     var options = provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<CareNest_Image.API.Settings.CloudinaryOptions>>().Value;
